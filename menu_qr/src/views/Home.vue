@@ -41,6 +41,7 @@
                                 <div class="flex justify-center items-center">
                                     <div ref="qrCodeContainer"
                                         class="w-64 h-64 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                                        <img src="@/assets/frame.png" alt="">
                                     </div>
                                 </div>
                             </div>
