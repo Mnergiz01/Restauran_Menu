@@ -50,6 +50,7 @@
       </div>
     </div>
 
+    <!-- Menu Body -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div v-if="loading" class="flex justify-center py-20">
         <div class="flex flex-col items-center">
@@ -71,7 +72,10 @@
             v-for="category in categories"
             :key="category.id"
             :id="category.id"
-            class="mb-24 scroll-mt-32" 
+            class="mb-24 scroll-mt-32"
+            data-aos="fade-up"
+            data-aos-offset="150"
+            data-aos-duration="800"
           >
             <div class="flex items-center mb-10">
               <div 
@@ -116,8 +120,10 @@
                   boxShadow: '0 10px 30px rgba(0, 0, 0, 0.05)', 
                   borderBottom: `3px solid ${settings.primary_color}` 
                 }"
+                data-aos="zoom-in-up"
+                data-aos-delay="100"
               >
-                <!-- Image Container -->
+                <!-- Image & Overlay -->
                 <div class="relative overflow-hidden">
                   <div class="aspect-w-16 aspect-h-12 bg-gray-100">
                     <img
@@ -132,15 +138,13 @@
                       </svg>
                     </div>
                   </div>
-                  
-                  <!-- Overlay Gradient -->
                   <div 
                     class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     :style="{ '--tw-gradient-from': settings.primary_color + 'cc' }"
                   ></div>
                 </div>
-                
-                <!-- Price Badge -->
+
+                <!-- Price -->
                 <div 
                   class="absolute top-4 right-4 px-4 py-2 rounded-full font-bold text-white shadow-lg transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
                   :style="{ 
@@ -150,21 +154,19 @@
                 >
                   {{ formatPrice(item.price) }}
                 </div>
-                
+
                 <!-- Content -->
                 <div class="p-6">
-                  <!-- Title and Description -->
                   <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition duration-300"
                       :style="{ 'group-hover:color': settings.primary_color }">
                     {{ item.name }}
                   </h3>
-                  
                   <p v-if="item.description" class="text-gray-600 mb-4 line-clamp-2 text-sm">
                     {{ item.description }}
                   </p>
-                  
-                  <!-- Variations Section (Always Visible) -->
-                  <div v-if="item.variations && item.variations.length > 0" class="mt-4">
+
+                  <!-- Variations -->
+                  <div v-if="item.variations?.length > 0" class="mt-4">
                     <div class="flex items-center mb-3">
                       <div 
                         class="w-1.5 h-6 rounded-full mr-2"
@@ -172,7 +174,6 @@
                       ></div>
                       <p class="text-sm font-semibold text-gray-700">Seçenekler</p>
                     </div>
-                    
                     <div class="space-y-2">
                       <div 
                         v-for="(variation, index) in item.variations" 
@@ -180,10 +181,7 @@
                         class="text-sm rounded-lg flex justify-between items-center border border-gray-100 overflow-hidden transition-all duration-200 hover:border-indigo-200 hover:shadow-sm"
                       >
                         <span class="px-3 py-2.5 bg-gray-50 text-gray-700 flex-1">{{ getVariationName(variation) }}</span>
-                        <span 
-                          class="px-3 py-2.5 font-medium flex-shrink-0" 
-                          :style="{ color: settings.primary_color }"
-                        >
+                        <span class="px-3 py-2.5 font-medium flex-shrink-0" :style="{ color: settings.primary_color }">
                           {{ getVariationPrice(variation) }}
                         </span>
                       </div>
@@ -191,7 +189,7 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </div> <!-- End grid -->
           </div>
         </div>
       </div>
@@ -204,6 +202,7 @@ import { ref, onMounted, computed, reactive, onBeforeUnmount } from 'vue'
 import { useMenuStore } from '../stores/menu'
 import { useQRSettingsStore } from '../stores/qrSettings'
 import { supabase } from '../supabase'
+import AOS from 'aos'
 
 const menuStore = useMenuStore()
 const qrSettingsStore = useQRSettingsStore()
@@ -215,88 +214,62 @@ const observer = ref(null)
 const initialLoadComplete = ref(false);
 const isMounted = ref(false);
 
-// Initialize data loading
 onMounted(async () => {
-  isMounted.value = true;
+  AOS.init({ once: false, duration: 700 })
+  isMounted.value = true
   try {
-    // First, load categories and settings
     await Promise.all([
       qrSettingsStore.fetchSettings(),
       menuStore.fetchCategories()
-    ]);
-    
-    // If we have categories, set the first one as active
+    ])
     if (categories.value.length > 0) {
-      activeCategory.value = categories.value[0].id;
-      
-      // Load menu items for each category
-      await loadAllCategoryItems();
+      activeCategory.value = categories.value[0].id
+      await loadAllCategoryItems()
     }
   } catch (error) {
-    console.error('Error loading menu data:', error);
+    console.error('Error loading menu data:', error)
   } finally {
-    loading.value = false;
-    initialLoadComplete.value = true; // Mark initial loading as complete
-    setupIntersectionObserver();
+    loading.value = false
+    initialLoadComplete.value = true
+    setupIntersectionObserver()
   }
-});
+})
 
 onBeforeUnmount(() => {
-  if (observer.value) {
-    observer.value.disconnect()
-  }
+  if (observer.value) observer.value.disconnect()
 })
 
 const categories = computed(() => menuStore.categories)
 const settings = computed(() => qrSettingsStore.settings)
 
-// Helper function to adjust color brightness
 function adjustColor(hex, percent) {
-  // Remove # if present
-  hex = hex.replace(/^#/, '');
-  
-  // Parse r, g, b values
-  let r = parseInt(hex.substring(0, 2), 16);
-  let g = parseInt(hex.substring(2, 4), 16);
-  let b = parseInt(hex.substring(4, 6), 16);
-  
-  // Adjust brightness
-  r = Math.min(255, Math.max(0, r + percent));
-  g = Math.min(255, Math.max(0, g + percent));
-  b = Math.min(255, Math.max(0, b + percent));
-  
-  // Convert back to hex
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  hex = hex.replace(/^#/, '')
+  let r = parseInt(hex.substring(0, 2), 16)
+  let g = parseInt(hex.substring(2, 4), 16)
+  let b = parseInt(hex.substring(4, 6), 16)
+  r = Math.min(255, Math.max(0, r + percent))
+  g = Math.min(255, Math.max(0, g + percent))
+  b = Math.min(255, Math.max(0, b + percent))
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
-// Load menu items for all categories
 async function loadAllCategoryItems() {
   for (const category of categories.value) {
     await loadCategoryItems(category.id)
   }
 }
 
-// Load menu items for a specific category
 async function loadCategoryItems(categoryId) {
-  if (!categoryId) return
-  
-  // Skip if already loaded
-  if (categoryItems[categoryId]) return
-  
+  if (!categoryId || categoryItems[categoryId]) return
   categoryLoading[categoryId] = true
-  
   try {
-    // Fetch directly from Supabase for more reliability
     const { data, error } = await supabase
       .from('menu_items')
       .select('*')
       .eq('category_id', categoryId)
       .eq('active', true)
       .order('name')
-    
     if (error) throw error
-    
-    // Store the items in our reactive object
     categoryItems[categoryId] = data || []
   } catch (error) {
     console.error(`Error loading items for category ${categoryId}:`, error)
@@ -306,79 +279,62 @@ async function loadCategoryItems(categoryId) {
   }
 }
 
-// Get items for a specific category
 function getCategoryItems(categoryId) {
   return categoryItems[categoryId] || []
 }
 
-// Format price with currency symbol
 function formatPrice(price) {
   return `${price}₺`
 }
 
-// Parse variation string to get name
 function getVariationName(variation) {
-  const parts = variation.split(':')
-  return parts[0].trim()
+  return variation.split(':')[0].trim()
 }
 
-// Parse variation string to get price
 function getVariationPrice(variation) {
   const parts = variation.split(':')
-  if (parts.length > 1) {
-    return parts[1].trim()
-  }
-  return ''
+  return parts.length > 1 ? parts[1].trim() : ''
 }
 
-// Scroll to a specific category
 function scrollToCategory(categoryId) {
   const element = document.getElementById(categoryId)
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth' })
-  }
+  if (element) element.scrollIntoView({ behavior: 'smooth' })
   activeCategory.value = categoryId
 }
 
-// Scroll to the top of the page
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-// Set up intersection observer to highlight active category during scroll
 function setupIntersectionObserver() {
-    if (!categories.value.length || !initialLoadComplete.value || !isMounted.value) return;
+  if (!categories.value.length || !initialLoadComplete.value || !isMounted.value) return
 
-    const options = {
-        root: null,
-        rootMargin: '-100px 0px -70% 0px',
-        threshold: 0
-    };
+  const options = {
+    root: null,
+    rootMargin: '-100px 0px -70% 0px',
+    threshold: 0
+  }
 
-    if (!observer.value) {
-        observer.value = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    activeCategory.value = entry.target.id;
-                }
-            });
-        }, options);
-    }
+  if (!observer.value) {
+    observer.value = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          activeCategory.value = entry.target.id
+        }
+      })
+    }, options)
+  }
 
-    // Get all category elements and observe them
-    setTimeout(() => {
-        categories.value.forEach(category => {
-            const element = document.getElementById(category.id);
-            if (element) {
-                observer.value.observe(element);
-            }
-        });
-    }, 100);
+  setTimeout(() => {
+    categories.value.forEach(category => {
+      const element = document.getElementById(category.id)
+      if (element) observer.value.observe(element)
+    })
+  }, 100)
 }
 </script>
 
 <style>
-/* Add line clamp utility if not already available in your Tailwind setup */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -386,7 +342,6 @@ function setupIntersectionObserver() {
   overflow: hidden;
 }
 
-/* Add horizontal scrollbar styling for category navigation */
 .overflow-x-auto {
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
