@@ -1,9 +1,11 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <router-view />
+    <footer></footer>
+
   </div>
 </template>
 
 <script setup>
-// Main App component
+import footer from './components/footer.vue';
 </script>
