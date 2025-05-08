@@ -1,16 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <header class="bg-white shadow-sm sticky top-0 z-10">
+  <div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <!-- Main Header -->
+    <header class="bg-white shadow-md sticky top-0 z-20">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
           <div class="flex-shrink-0 flex items-center">
-            <img v-if="settings.logo_url" :src="settings.logo_url" class="h-8 w-auto" :alt="settings.restaurant_name" />
+            <img v-if="settings.logo_url" :src="settings.logo_url" class="h-9 w-auto" :alt="settings.restaurant_name" />
             <h1 v-else class="text-xl font-bold" :style="{ color: settings.primary_color }">{{ settings.restaurant_name }}</h1>
           </div>
           <div class="flex items-center">
             <button
               @click="scrollToTop"
-              class="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200"
+              class="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300"
+              :style="{ '--tw-gradient-from': settings.primary_color }"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
@@ -21,69 +23,84 @@
       </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div v-if="loading" class="flex justify-center py-16">
+    <!-- Sticky Category Navigation -->
+    <div class="sticky top-16 z-10 bg-white shadow-md pt-4 pb-3 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto">
+        <div class="overflow-x-auto py-1 px-1 -mx-4 sm:-mx-6 lg:-mx-8">
+          <div class="inline-block min-w-full px-4 sm:px-6 lg:px-8">
+            <nav class="flex space-x-3">
+              <button
+                v-for="category in categories"
+                :key="category.id"
+                @click="scrollToCategory(category.id)"
+                class="px-5 py-3 text-sm font-medium rounded-xl transition-all duration-300 ease-in-out whitespace-nowrap flex items-center"
+                :class="[
+                  activeCategory === category.id 
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg ring-2 ring-white' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm'
+                ]"
+                :style="activeCategory === category.id ? { '--tw-gradient-from': settings.primary_color, '--tw-gradient-to': adjustColor(settings.primary_color, 40) } : {}"
+              >
+                <span class="mr-2.5" v-html="category.icon"></span>
+                {{ category.name }}
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div v-if="loading" class="flex justify-center py-20">
         <div class="flex flex-col items-center">
-          <svg class="animate-spin h-10 w-10 text-gray-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <p class="text-gray-500">Menü yükleniyor...</p>
+          <div class="relative w-20 h-20">
+            <div class="absolute top-0 left-0 w-full h-full rounded-full border-4 border-gray-200"></div>
+            <div 
+              class="absolute top-0 left-0 w-full h-full rounded-full border-4 border-transparent border-t-indigo-600 animate-spin"
+              :style="{ borderTopColor: settings.primary_color }"
+            ></div>
+          </div>
+          <p class="mt-4 text-gray-600 font-medium">Menü yükleniyor...</p>
         </div>
       </div>
 
       <div v-else>
-        <!-- Category Navigation -->
-        <div class="mb-10 overflow-x-auto py-2 px-1">
-          <nav class="flex space-x-3 pb-1">
-            <button
-              v-for="category in categories"
-              :key="category.id"
-              @click="scrollToCategory(category.id)"
-              class="px-5 py-3 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out whitespace-nowrap flex items-center"
-              :class="[
-                activeCategory === category.id 
-                  ? 'bg-white text-gray-900 shadow-md ring-1 ring-gray-200' 
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-white hover:shadow-sm'
-              ]"
-              :style="activeCategory === category.id ? { color: settings.primary_color } : {}"
-            >
-              <span class="mr-2.5" v-html="category.icon"></span>
-              {{ category.name }}
-            </button>
-          </nav>
-        </div>
-
         <!-- Categories and Menu Items -->
         <div>
           <div
             v-for="category in categories"
             :key="category.id"
             :id="category.id"
-            class="mb-20"
+            class="mb-24 scroll-mt-32" 
           >
-            <div class="flex items-center mb-8">
+            <div class="flex items-center mb-10">
               <div 
-                class="p-3 rounded-xl shadow-sm mr-4 flex items-center justify-center" 
-                :style="{ backgroundColor: settings.primary_color + '10' }"
+                class="p-4 rounded-2xl shadow-md mr-5 flex items-center justify-center" 
+                :style="{ 
+                  background: `linear-gradient(135deg, ${settings.primary_color}15, ${settings.primary_color}30)`,
+                  boxShadow: `0 10px 15px -3px ${settings.primary_color}10, 0 4px 6px -4px ${settings.primary_color}10`
+                }"
               >
-                <div class="text-2xl" :style="{ color: settings.primary_color }" v-html="category.icon"></div>
+                <div class="text-3xl" :style="{ color: settings.primary_color }" v-html="category.icon"></div>
               </div>
-              <h2 class="text-2xl font-bold" :style="{ color: settings.primary_color }">
+              <h2 class="text-3xl font-bold" :style="{ color: settings.primary_color }">
                 {{ category.name }}
               </h2>
             </div>
 
-            <div v-if="categoryLoading[category.id]" class="flex justify-center py-12">
-              <svg class="animate-spin h-8 w-8" :style="{ color: settings.primary_color }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <div v-if="categoryLoading[category.id]" class="flex justify-center py-16">
+              <div class="relative w-16 h-16">
+                <div class="absolute top-0 left-0 w-full h-full rounded-full border-4 border-gray-200"></div>
+                <div 
+                  class="absolute top-0 left-0 w-full h-full rounded-full border-4 border-transparent border-t-indigo-600 animate-spin"
+                  :style="{ borderTopColor: settings.primary_color }"
+                ></div>
+              </div>
             </div>
 
-            <div v-else-if="getCategoryItems(category.id).length === 0" class="bg-white rounded-2xl shadow-sm p-12 text-center">
-              <div class="inline-flex items-center justify-center p-4 rounded-full bg-gray-100 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div v-else-if="getCategoryItems(category.id).length === 0" class="bg-white rounded-2xl shadow-lg p-12 text-center">
+              <div class="inline-flex items-center justify-center p-5 rounded-full bg-gray-100 mb-5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                 </svg>
               </div>
@@ -94,19 +111,22 @@
               <div
                 v-for="item in getCategoryItems(category.id)"
                 :key="item.id"
-                class="group relative bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
-                :style="{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.03)', borderBottom: `3px solid ${settings.primary_color}` }"
+                class="group relative bg-white rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
+                :style="{ 
+                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.05)', 
+                  borderBottom: `3px solid ${settings.primary_color}` 
+                }"
               >
                 <!-- Image Container -->
                 <div class="relative overflow-hidden">
-                  <div class="aspect-w-16 aspect-h-10 bg-gray-100">
+                  <div class="aspect-w-16 aspect-h-12 bg-gray-100">
                     <img
                       v-if="item.image_url"
                       :src="item.image_url"
                       :alt="item.name"
-                      class="w-full h-52 object-cover transform transition duration-700 group-hover:scale-110"
+                      class="w-full h-64 object-cover transform transition duration-700 group-hover:scale-110"
                     />
-                    <div v-else class="w-full h-52 flex items-center justify-center bg-gray-50 text-gray-300">
+                    <div v-else class="w-full h-64 flex items-center justify-center bg-gray-50 text-gray-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
@@ -114,13 +134,19 @@
                   </div>
                   
                   <!-- Overlay Gradient -->
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div 
+                    class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    :style="{ '--tw-gradient-from': settings.primary_color + 'cc' }"
+                  ></div>
                 </div>
                 
                 <!-- Price Badge -->
                 <div 
-                  class="absolute top-4 right-4 px-3.5 py-1.5 rounded-full font-bold text-white shadow-lg transform transition-all duration-300 group-hover:scale-110"
-                  :style="{ backgroundColor: settings.primary_color }"
+                  class="absolute top-4 right-4 px-4 py-2 rounded-full font-bold text-white shadow-lg transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
+                  :style="{ 
+                    background: `linear-gradient(135deg, ${settings.primary_color}, ${adjustColor(settings.primary_color, 40)})`,
+                    boxShadow: `0 10px 15px -3px ${settings.primary_color}40`
+                  }"
                 >
                   {{ formatPrice(item.price) }}
                 </div>
@@ -128,7 +154,8 @@
                 <!-- Content -->
                 <div class="p-6">
                   <!-- Title and Description -->
-                  <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition duration-300">
+                  <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition duration-300"
+                      :style="{ 'group-hover:color': settings.primary_color }">
                     {{ item.name }}
                   </h3>
                   
@@ -136,23 +163,25 @@
                     {{ item.description }}
                   </p>
                   
-                  <!-- Variations -->
-                  <div v-if="item.variations && item.variations.length > 0" class="mt-4 space-y-2">
-                    <p class="text-sm font-semibold text-gray-700 flex items-center mb-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                      Seçenekler
-                    </p>
+                  <!-- Variations Section (Always Visible) -->
+                  <div v-if="item.variations && item.variations.length > 0" class="mt-4">
+                    <div class="flex items-center mb-3">
+                      <div 
+                        class="w-1.5 h-6 rounded-full mr-2"
+                        :style="{ backgroundColor: settings.primary_color }"
+                      ></div>
+                      <p class="text-sm font-semibold text-gray-700">Seçenekler</p>
+                    </div>
+                    
                     <div class="space-y-2">
                       <div 
                         v-for="(variation, index) in item.variations" 
                         :key="index" 
-                        class="text-sm rounded-lg flex justify-between items-center border border-gray-100 overflow-hidden"
+                        class="text-sm rounded-lg flex justify-between items-center border border-gray-100 overflow-hidden transition-all duration-200 hover:border-indigo-200 hover:shadow-sm"
                       >
-                        <span class="px-3 py-2 bg-gray-50 text-gray-700">{{ getVariationName(variation) }}</span>
+                        <span class="px-3 py-2.5 bg-gray-50 text-gray-700 flex-1">{{ getVariationName(variation) }}</span>
                         <span 
-                          class="px-3 py-2 font-medium" 
+                          class="px-3 py-2.5 font-medium flex-shrink-0" 
                           :style="{ color: settings.primary_color }"
                         >
                           {{ getVariationPrice(variation) }}
@@ -183,39 +212,62 @@ const activeCategory = ref('')
 const categoryItems = reactive({})
 const categoryLoading = reactive({})
 const observer = ref(null)
-
-const categories = computed(() => menuStore.categories)
-const settings = computed(() => qrSettingsStore.settings)
+const initialLoadComplete = ref(false);
+const isMounted = ref(false);
 
 // Initialize data loading
 onMounted(async () => {
+  isMounted.value = true;
   try {
     // First, load categories and settings
     await Promise.all([
       qrSettingsStore.fetchSettings(),
       menuStore.fetchCategories()
-    ])
+    ]);
     
     // If we have categories, set the first one as active
     if (categories.value.length > 0) {
-      activeCategory.value = categories.value[0].id
+      activeCategory.value = categories.value[0].id;
       
       // Load menu items for each category
-      await loadAllCategoryItems()
+      await loadAllCategoryItems();
     }
   } catch (error) {
-    console.error('Error loading menu data:', error)
+    console.error('Error loading menu data:', error);
   } finally {
-    loading.value = false
+    loading.value = false;
+    initialLoadComplete.value = true; // Mark initial loading as complete
     setupIntersectionObserver();
   }
-})
+});
 
 onBeforeUnmount(() => {
   if (observer.value) {
     observer.value.disconnect()
   }
 })
+
+const categories = computed(() => menuStore.categories)
+const settings = computed(() => qrSettingsStore.settings)
+
+// Helper function to adjust color brightness
+function adjustColor(hex, percent) {
+  // Remove # if present
+  hex = hex.replace(/^#/, '');
+  
+  // Parse r, g, b values
+  let r = parseInt(hex.substring(0, 2), 16);
+  let g = parseInt(hex.substring(2, 4), 16);
+  let b = parseInt(hex.substring(4, 6), 16);
+  
+  // Adjust brightness
+  r = Math.min(255, Math.max(0, r + percent));
+  g = Math.min(255, Math.max(0, g + percent));
+  b = Math.min(255, Math.max(0, b + percent));
+  
+  // Convert back to hex
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
 
 // Load menu items for all categories
 async function loadAllCategoryItems() {
@@ -295,7 +347,7 @@ function scrollToTop() {
 
 // Set up intersection observer to highlight active category during scroll
 function setupIntersectionObserver() {
-    if (!categories.value.length) return;
+    if (!categories.value.length || !initialLoadComplete.value || !isMounted.value) return;
 
     const options = {
         root: null,
@@ -332,5 +384,24 @@ function setupIntersectionObserver() {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Add horizontal scrollbar styling for category navigation */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 20px;
 }
 </style>
